@@ -2,6 +2,7 @@ package app.abhishekgarala.gesturecam
 
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -119,7 +120,7 @@ class MainActivity : AppCompatActivity() {
             camera?.cameraControl?.enableTorch(isChecked)
         }
 
-        showOnboardingIfFirstLaunch()
+        //showOnboardingIfFirstLaunch()
     }
 
     private fun startCamera() {
@@ -180,6 +181,7 @@ class MainActivity : AppCompatActivity() {
     private fun recognizeHand(imageProxy: ImageProxy) {
         gestureRecognizerHelper.recognizeLiveStream(
             imageProxy = imageProxy,
+            lensFacing = lensFacing
         )
     }
 
@@ -188,7 +190,8 @@ class MainActivity : AppCompatActivity() {
             gestureData.result,
             gestureData.imageHeight,
             gestureData.imageWidth,
-            RunningMode.LIVE_STREAM
+            RunningMode.LIVE_STREAM,
+            lensFacing
         )
         viewModel.processGestureResult(
             gestureData.result,
@@ -287,26 +290,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openGallery() {
-        val intent = Intent(Intent.ACTION_VIEW, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        startActivity(intent)
-    }
-
-    private fun showOnboardingIfFirstLaunch() {
-        if (prefs.getBoolean("first_launch", true)) {
-            AlertDialog.Builder(this)
-                .setTitle("Welcome to Gesture Camera")
-                .setMessage(
-                    "Control the camera with hand gestures:\n\n" +
-                            getString(R.string.gesture_open_palm) + "\n" +
-                            getString(R.string.gesture_peace) + "\n" +
-                            getString(R.string.gesture_thumbs_up) + "\n" +
-                            getString(R.string.gesture_ok) + "\n" +
-                            getString(R.string.gesture_pinch)
-                )
-                .setPositiveButton("Got it") { _, _ ->
-                    prefs.edit().putBoolean("first_launch", false).apply()
-                }
-                .show()
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(this, "No gallery app found", Toast.LENGTH_SHORT).show()
         }
     }
 

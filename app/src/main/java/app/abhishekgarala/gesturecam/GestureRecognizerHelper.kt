@@ -12,12 +12,14 @@ import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizer
 import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizerResult
 import android.util.Log
+import androidx.camera.core.CameraSelector
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
 import com.google.mediapipe.tasks.core.Delegate
 
 class GestureRecognizerHelper(
     private val context: Context,
-    private val resultListener: (GestureData) -> Unit
+    private val resultListener: (GestureData) -> Unit,
+    private var lensFacing: Int = CameraSelector.LENS_FACING_FRONT
 ) {
     private var gestureRecognizer: GestureRecognizer? = null
 
@@ -45,8 +47,8 @@ class GestureRecognizerHelper(
         gestureRecognizer = GestureRecognizer.createFromOptions(context, options)
     }
 
-    fun recognizeLiveStream(imageProxy: ImageProxy) {
-
+    fun recognizeLiveStream(imageProxy: ImageProxy, lensFacing: Int) {
+        this.lensFacing = lensFacing // Update lensFacing
         val frameTime = SystemClock.uptimeMillis()
 
         val bitmapBuffer = Bitmap.createBitmap(
@@ -57,9 +59,10 @@ class GestureRecognizerHelper(
 
         val matrix = Matrix().apply {
             postRotate(imageProxy.imageInfo.rotationDegrees.toFloat())
-            postScale(
-                -1f, 1f, imageProxy.width.toFloat(), imageProxy.height.toFloat()
-            )
+            // Only flip horizontally for front camera
+            if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+                postScale(-1f, 1f, imageProxy.width.toFloat(), imageProxy.height.toFloat())
+            }
         }
 
         val rotatedBitmap = Bitmap.createBitmap(
@@ -84,22 +87,6 @@ class GestureRecognizerHelper(
 
     fun close() {
         gestureRecognizer?.close()
-    }
-
-    private fun ImageProxy.toBitmap(): Bitmap {
-        val plane = planes[0]
-        val buffer: java.nio.ByteBuffer = plane.buffer
-        val pixels = ByteArray(buffer.remaining())
-        buffer.get(pixels)
-        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
-            copyPixelsFromBuffer(java.nio.ByteBuffer.wrap(pixels))
-        }
-    }
-
-    private fun rotateBitmap(bitmap: Bitmap, degrees: Int): Bitmap {
-        if (degrees == 0) return bitmap
-        val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
     companion object {
