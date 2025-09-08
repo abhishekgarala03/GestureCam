@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">GestureCam</string>
+    <string name="permission_denied">Camera permission denied. App cannot function.</string>
+    <string name="gesture_open_palm">Open Palm: Capture Photo</string>
+    <string name="gesture_peace">Peace Sign: Start/Stop Video</string>
+    <string name="gesture_thumbs_up">Thumbs Up: Switch Camera</string>
+    <string name="gesture_ok">OK Sign: Open Gallery</string>
+    <string name="gesture_pinch">Pinch: Zoom In/Out</string>
+</resources>
